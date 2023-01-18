@@ -30,7 +30,7 @@ const Home = Vue.component('Home', {
             messageTxt: '',
             compositionList: [],
             compositionListHeaders: [
-                { text: 'Title', value: 'title' },
+                { text: 'Title', value: 'local-title' },
                 { text: 'Last Modified', value: 'date' },
                 { text: 'Actions', value: 'actions', sortable: false },
             ],
@@ -42,7 +42,7 @@ const Home = Vue.component('Home', {
                 { text: 'Actions', value: 'actions', sortable: false },
             ],
             partCompositionsTableHeaders: [
-                { text: 'Note', value: 'mynotes' },
+                { text: 'Note', value: 'local-notes' },
                 { text: 'Midi', value: 'hasmidi' },
                 { text: 'Audio', value: 'hasaudio' },
                 { text: 'Id', value: 'id' },

@@ -36,6 +36,15 @@
             font-style: oblique; */
         }
 
+        .title-in-comp-list-table, .note-in-part-comp-table{
+            padding: 5px;
+        }
+
+        .title-in-comp-list-table:hover, .note-in-part-comp-table:hover{
+            cursor: pointer;
+            background-color: aliceblue;
+        }
+
         #XXpiano-canvas {
             width: 100px;
             height: 100px;
@@ -215,8 +224,8 @@
                         </div>
                     </template> -->
 
-                    <template v-slot:item.mynotes="{ item }">
-                        <div :id="item.id" draggable @dragstart="onPartCompositionDragStart">
+                    <template v-slot:item.local-notes="{ item }">
+                        <div :id="item.id" draggable @dragstart="onPartCompositionDragStart" class="note-in-part-comp-table">
                             {{item.notes}}
                         </div>
                     </template>
@@ -279,9 +288,9 @@
                             </v-icon>
                         </v-btn> -->
 
-                        <canvas id="piano-canvas" ref="pianoCanvas" class="ml-5"></canvas>
+                        <canvas v-show="recordingInProgress" id="piano-canvas" ref="pianoCanvas" class="ml-5"></canvas>
 
-                        <v-spacer></v-spacer>
+                        <!-- <v-spacer></v-spacer> -->
 
 
                         <!-- <v-btn x-small class="ml-5 mt-5" @click="playAudio">Play Audio
@@ -370,6 +379,13 @@
                         <v-data-table disable-pagination fixed-header hide-default-footer
                             :headers="compositionListHeaders" :items="compositionList" sort-by="lastModifiedDate"
                             class="elevation-1">
+
+                            <template v-slot:item.local-title="{ item }">
+                                <div @click="openComposition(item)" class="title-in-comp-list-table">
+                                    {{ item.title }}
+                                </div>
+                            </template>
+
 
                             <template v-slot:item.actions="{ item }">
                                 <v-icon small class="mr-2" @click="openComposition(item)">
