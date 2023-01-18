@@ -36,10 +36,10 @@ const Home = Vue.component('Home', {
             ],
             textPartsTableHeaders: [
                 { text: 'Text', value: 'local-selectedtext' },
-                { text: 'Id', value: 'decorationId' },
-                { text: 'Id', value: 'id' },
-                { text: 'Range', value: 'range' },
-                { text: 'Actions', value: 'actions', sortable: false },
+                // { text: 'Id', value: 'decorationId' },
+                // { text: 'Id', value: 'id' },
+                // { text: 'Range', value: 'range' },
+                { text: 'Actions', value: 'actions', sortable: false, width: '150px' },
             ],
             partCompositionsTableHeaders: [
                 { text: 'Note', value: 'local-notes' },
@@ -206,11 +206,21 @@ const Home = Vue.component('Home', {
             let index = this.selectedTextPart.compositions.findIndex(c => c.id == composition.id);
             // console.log({index, composition, tbd: this.selectedTextPart.compositions[index]});
             this.selectedTextPart.compositions.splice(index, 1);
-            //TODO: What is the implication of following
-            this.selectedPartComposition = null;
+
+            //Select next best available part composition
+            if(this.selectedTextPart.compositions.length > 0){
+                let newIndex = index - 1;
+                if(newIndex < 0) newIndex = 0;
+                this.selectedPartComposition = this.selectedTextPart.compositions[newIndex];
+            }else{
+                this.selectedPartComposition = null;
+            }
         },
         addPartComposition() {
             let composition = {
+                createdDate: new Date(),
+                lastModifiedDate: new Date(),
+                videoBlob: null,
                 audioBlob: null,
                 notes: '--NO NOTES--',
                 midiData: null,
@@ -532,7 +542,7 @@ const Home = Vue.component('Home', {
                 // audioEle.play();
                 console.table(midiData);
             } else {  //data.type == 'video'
-                console.log({ data });
+                console.log({ event: 'onAudioMidiStop', data });
                 this.selectedPartComposition.videoBlob = data.videoBlob;
             }
         },
@@ -673,7 +683,7 @@ const Home = Vue.component('Home', {
     },
     async mounted() {
         console.log('Home mounted');
-        let containerEle = this.$refs['container'];
+        let containerEle = this.$refs['editor-container'];
 
         createEditor(containerEle, this.text, async (editor) => {
             this.editor = editor;
@@ -1205,138 +1215,3 @@ async function init() {     //THIS METHOD IS CALLED FROM index.html script tag
 //================================================================================================
 
 
-function XXinit() {
-
-
-
-    let editor, decorationsCollection;
-    let text = `
-ना मन हूँ, ना बुद्धि, ना चित अहंकार
-ना जिव्या नयन नासिका करण द्वार
-ना मन हूँ, ना बुद्धि, ना चित अहंकार
-ना जिव्या नयन नासिका करण द्वार
-ना चलता ना रुकता ना कहता ना सुनता
-जगत चेतना हूँ, अनादि अनन्ता
-ना चलता ना रुकता ना कहता ना सुनता
-जगत चेतना हूँ, अनादि अनन्ता
-`;
-
-
-
-
-    function test() {
-        let selection = editor.getSelection();
-
-        let d1 = {
-            range: new monaco.Range(3, 1, 5, 1),
-            options: {
-                isWholeLine: true,
-                linesDecorationsClassName: 'myLineDecoration'
-            }
-        }
-
-        let d2 = {
-            range: new monaco.Range(7, 1, 7, 24),
-            options: { inlineClassName: 'myInlineDecoration' }
-        }
-
-        let d3 = {
-            range: new monaco.Range(selection.startLineNumber, selection.startColumn, selection.endLineNumber, selection.endColumn),
-            options: { inlineClassName: 'myInlineDecoration' }
-        }
-
-        decorationsCollection = editor.createDecorationsCollection([d1, d2, d3]);
-
-
-
-    }
-
-    function XXtest() {
-        let range = editor.getSelection();
-        return addDecoration(range, 'redtxt', 'red');
-    }
-
-    function addDecoration(myRange, decorationClassName, overviewRulerColor) {
-
-        var newDecorationId = editor.deltaDecorations([], [
-            {
-                range: myRange,
-                options: {
-                    isWholeLine: true,
-                    className: decorationClassName,
-                    overviewRuler: {
-                        color: overviewRulerColor
-                    }
-                }
-            }
-        ]);
-        return newDecorationId;
-    }
-
-    // function editorDidMount(e){
-    //     console.log({e});
-    // }
-
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
-    require(["vs/editor/editor.main"], () => {
-        editor = monaco.editor.create(document.getElementById('container'), {
-            value: text,
-            language: 'text',
-            theme: 'vs-dark',
-            fontSize: "24px",
-            // unicodeHighlighting: false,
-            // semanticHighlighting: {enabled: false},
-            // lineNumbers: 'off',
-            // glyphMargin: false,
-            // folding: false
-        });
-
-        console.log({ editor });
-
-
-        // test();
-
-
-        // decorationsCollection = editor.createDecorationsCollection([]);
-        // console.log({ decorationsCollection });
-
-    });
-
-    /** 
-    
-    How to get decoration ID
-    editor.getModel().getDecorationRange('b;6')
-    
-    editor.getModel().getDecorationsInRange(new Range({endLineNumber 3, startLineNumber: 5}));
-    
-    {endColumn, endLineNumber, startColumn, startLineNumber}
-    
-    {endLineNumber 3, startLineNumber: 5}
-    
-    
-    IRange:
-    endColumn
-    endLineNumber
-    startColumn
-    startLineNumber
-
-
-Playground:        
-https://microsoft.github.io/monaco-editor/playground.html#interacting-with-the-editor-line-and-inline-decorations        
-
-Action:
-https://microsoft.github.io/monaco-editor/playground.html#interacting-with-the-editor-adding-an-action-to-an-editor-instance
-
-    
-ना मन हूँ, ना बुद्धि, ना चित अहंकार
-ना जिव्या नयन नासिका करण द्वार
-ना मन हूँ, ना बुद्धि, ना चित अहंकार
-ना जिव्या नयन नासिका करण द्वार
-ना चलता ना रुकता ना कहता ना सुनता
-जगत चेतना हूँ, अनादि अनन्ता
-ना चलता ना रुकता ना कहता ना सुनता
-जगत चेतना हूँ, अनादि अनन्ता
-    
-    */
-
-}
