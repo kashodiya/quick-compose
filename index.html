@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Quick Compose</title>
+    <!-- Icon names are here: https://pictogrammers.github.io/@mdi/font/2.0.46/ -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vuetify/2.6.2/vuetify.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <link rel="stylesheet" data-name="vs/editor/editor.main"
+        href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css">
+    <style>
+        .text-parts-table {
+            /* width: 500px; */
+        }
+
+        .text-parts-table td,
+        .text-parts-table th {
+            font-size: 18px !important;
+        }
+
+        .text-parts-table-selected-row,
+        .parts-compositions-table-selected-row {
+            background-color: aliceblue;
+        }
+
+        .selected-text-part {
+            background-color: yellow;
+            color: black !important;
+            cursor: pointer;
+            /* color: red !important;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+            font-style: oblique; */
+        }
+
+        #XXpiano-canvas {
+            width: 100px;
+            height: 100px;
+            border: 1px solid red;
+        }
+
+        /* .myLineDecoration {
+            background: lightblue;
+            width: 5px !important;
+            margin-left: 3px;
+        } */
+    </style>
+</head>
+
+<body>
+    <template id="home-template">
+        <div>
+
+            <v-row>
+                <v-col XXcols="8" md="6">
+                    <v-text-field v-model="title" ref="title" label="Title"></v-text-field>
+                </v-col>
+                <v-col XXcols="4" md="6">
+                    <v-spacer></v-spacer>
+
+                    <v-btn small class="ml-5 mt-5" @click="saveComposition">Save
+                        <v-icon right dark>
+                            mdi-content-save
+                        </v-icon>
+                    </v-btn>
+
+                    <v-btn small class="ml-5 mt-5" @click="openCompositionList">Open
+                        <v-icon right dark>
+                            mdi-folder-open
+                        </v-icon>
+                    </v-btn>
+
+                    <v-btn small class="ml-5 mt-5" @click="addNewComposition">New
+                        <v-icon right dark>
+                            mdi-plus-box
+                        </v-icon>
+                    </v-btn>
+
+                    <v-btn small class="ml-5 mt-5" @click="downloadComposition">Download
+                        <v-icon right dark>
+                            mdi-briefcase-download
+                        </v-icon>
+                    </v-btn>
+
+                    <!-- <v-btn small class="ml-5 mt-5" @click="test">test</v-btn> -->
+
+
+                </v-col>
+            </v-row>
+
+            </v-card>
+
+            <div class="h6">Lyrics</div>
+
+            <div ref="container" style="height:250px;border:1px solid black;"></div>
+
+            <!-- <v-card class="pa-2 mt-2">
+                <v-btn small @click="attachContent">Add content
+                    <v-icon right dark>
+                        mdi-bookmark-plus
+                    </v-icon>
+                </v-btn>
+            </v-card> -->
+
+            <v-card class="pa-2 mt-2" XXmax-width="400" tile>
+
+                <!-- <v-expansion-panels>
+                    <v-expansion-panel v-for="(part, index) in textParts" :key="index">
+                        <v-expansion-panel-header>
+                            {{part.selectedText}} ({{part.decorationId}})
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                            <v-btn x-small @click="recordAudioKeys(part)">Record audio/keys</v-btn>
+                        </v-expansion-panel-content>
+                    </v-expansion-panel>
+                </v-expansion-panels> -->
+
+
+                <v-toolbar flat dense>
+                    <v-toolbar-title>
+                        Selected texts: ({{textParts.length}})
+                    </v-toolbar-title>
+                    <v-spacer></v-spacer>
+
+                    <v-btn XXclass="mb-5" small @click="addNewTextPart">Add selected text
+                        <v-icon right dark>
+                            mdi-comment-text
+                        </v-icon>
+                    </v-btn>
+                </v-toolbar>
+
+
+                <v-data-table ref="text-parts-table" disable-pagination fixed-header hide-default-footer height="200"
+                    @click:row="textPartTableRowClicked" :headers="textPartsTableHeaders" :items="textParts"
+                    XXsort-by="lastModifiedDate" :item-class="getClassForTextPartsTableRow"
+                    class="elevation-1 text-parts-table">
+
+
+                    <template v-slot:item.local-selectedtext="{ item }">
+                        <div :id="item.id" @drop="handlePartCompDrop" @dragenter="checkPartCompDrop"
+                            @dragover="checkPartCompDrop">
+                            {{item.selectedText}}
+                        </div>
+                    </template>
+
+
+                    <template v-slot:item.range="{ item }">
+                        <div :ref="item.id">
+                            {{item.decorationRange.startLineNumber}}:{{item.decorationRange.startColumn}}-{{item.decorationRange.endLineNumber}}:{{item.decorationRange.endColumn}}
+                        </div>
+                    </template>
+
+                    <!-- <template v-slot:top v-if="textParts.length > 0">
+                        Selected texts ({{textParts.length}})
+                    </template> -->
+
+                    <template v-slot:item.actions="{ item }">
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-icon small @click="deleteTextPart(item)" v-bind="attrs" v-on="on">
+                                    mdi-delete
+                                </v-icon>
+                            </template>
+                            <span>Delete</span>
+                        </v-tooltip>
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on, attrs }">
+                                <v-icon class="ml-5" small @click="attachPartToSelectedText(item)" v-bind="attrs"
+                                    v-on="on">
+                                    mdi-repeat
+                                </v-icon>
+                            </template>
+                            <span>Swap the selected text</span>
+                        </v-tooltip>
+                    </template>
+
+
+                    <template v-slot:no-data>
+                        <h3>Select some text and press Ctrl+A</h3>
+                    </template>
+                </v-data-table>
+
+            </v-card>
+
+            <v-card class="pa-2 mt-2" tile v-if="selectedTextPart">
+
+
+                <v-toolbar flat dense>
+                    <v-toolbar-title>
+                        Compositions for: {{selectedTextPart.selectedText}} ({{selectedTextPart.decorationId}})
+                    </v-toolbar-title>
+                    <v-spacer></v-spacer>
+
+                    <v-btn XXclass="mb-5" small @click="addPartComposition">Add composition
+                        <v-icon right dark>
+                            mdi-bookmark-plus
+                        </v-icon>
+                    </v-btn>
+                </v-toolbar>
+
+
+
+
+                <v-data-table ref="part-compositions-table" disable-pagination fixed-header hide-default-footer XXdense
+                    height="200" @click:row="partCompositionTableRowClicked" :headers="partCompositionsTableHeaders"
+                    :items="selectedTextPart.compositions" :item-class="getClassForPartsCompositionsTableSelectedRow"
+                    class="elevation-1 mt-3 text-parts-table">
+
+                    <!-- <template v-slot:item.range="{ item }">
+                        <div :ref="item.decorationId">
+                            {{item.decorationRange.startLineNumber}}:{{item.decorationRange.startColumn}}-{{item.decorationRange.endLineNumber}}:{{item.decorationRange.endColumn}}
+                        </div>
+                    </template> -->
+
+                    <template v-slot:item.mynotes="{ item }">
+                        <div :id="item.id" draggable @dragstart="onPartCompositionDragStart">
+                            {{item.notes}}
+                        </div>
+                    </template>
+
+
+                    <template v-slot:item.hasaudio="{ item }">
+                        {{item.audioBlob ? 'Yes' : 'No'}}
+                    </template>
+                    <template v-slot:item.hasmidi="{ item }">
+                        {{item.midiData ? 'Yes' : 'No'}}
+                    </template>
+
+                    <template v-slot:item.actions="{ item }">
+                        <v-icon small @click="deleteTextPartComposition(item)">
+                            mdi-delete
+                        </v-icon>
+                    </template>
+
+                    <template v-slot:no-data>
+                        <h3>Please add a composition.</h3>
+                    </template>
+                </v-data-table>
+
+                <div class="mt-3" v-show="selectedPartComposition" ref="partCompositionNotes">
+                    <!-- {{selectedPartComposition.notes}} {{selectedPartComposition.id}} -->
+                    <v-textarea v-if="selectedPartComposition" height="80" outlined dense hide-details
+                        ref="partCompositionNotes" v-model="selectedPartComposition.notes" label="Notes"></v-textarea>
+
+
+                    <v-toolbar flat dense class="mt-5">
+
+                        <v-btn medium @click="startRecording" color="success" :disabled="shouldDisableButton('Record')">
+                            Record
+                            <v-icon right dark>
+                                mdi-record
+                            </v-icon>
+                        </v-btn>
+
+                        <v-btn class="ml-3" medium @click="stopRecording" color="warning"
+                            :disabled="shouldDisableButton('Stop')">
+                            Stop
+                            <v-icon right dark>
+                                mdi-stop
+                            </v-icon>
+                        </v-btn>
+
+                        <v-btn class="ml-3" medium @click="discardRecording" color="error"
+                            :disabled="shouldDisableButton('Discard')">
+                            Discard
+                            <v-icon right dark>
+                                mdi-delete
+                            </v-icon>
+                        </v-btn>
+
+                        <!-- <v-btn XXclass="mb-5" medium @click="toggleRecording"
+                            :color="recordingInProgress ? 'error' : 'primary'" :disabled="!audioMediaCaptured">
+                            {{recordingInProgress ? 'Stop' : 'Start'}} recording
+                            <v-icon right dark>
+                                {{recordingInProgress ? 'mdi-stop' : 'mdi-record'}}
+                            </v-icon>
+                        </v-btn> -->
+
+                        <canvas id="piano-canvas" ref="pianoCanvas" class="ml-5"></canvas>
+
+                        <v-spacer></v-spacer>
+
+
+                        <!-- <v-btn x-small class="ml-5 mt-5" @click="playAudio">Play Audio
+                            <v-icon right dark>
+                                mdi-content-save
+                            </v-icon>
+                        </v-btn>
+                        <v-btn x-small class="ml-5 mt-5" @click="playVideo">Play Video
+                            <v-icon right dark>
+                                mdi-content-save
+                            </v-icon>
+                        </v-btn> -->
+
+
+                        <!-- <v-progress-linear class="ml-5" rounded v-if="recordingInProgress" indeterminate></v-progress-linear> -->
+                    </v-toolbar>
+
+                    <v-toolbar flat dense class="mt-5">
+                        <video v-show="selectedPartComposition && selectedPartComposition.audioBlob" XXstyle="height:100px" controls
+                            ref="captureVideo"></video>
+                        <v-btn class="ml-5" small v-show="selectedPartComposition && selectedPartComposition.videoBlob"
+                            :href="selectedPartComposition.videoURL"
+                            :disabled="selectedPartComposition.videoBlob == null"
+                            :download="selectedPartComposition.id">
+                            Download Video
+                            <v-icon right>mdi-download</v-icon>
+                        </v-btn>
+                    </v-toolbar>
+                    <v-toolbar flat dense class="mt-5">
+                        <audio v-show="selectedPartComposition && selectedPartComposition.videoBlob" ref="audioPlayer" controls></audio>
+                        <v-btn class="ml-5" small v-show="selectedPartComposition && selectedPartComposition.audioBlob"
+                            :href="selectedPartComposition.audioURL"
+                            :disabled="selectedPartComposition.audioBlob == null"
+                            :download="selectedPartComposition.id + '.mp3'">
+                            Download Audio
+                            <v-icon right>mdi-download</v-icon>
+                        </v-btn>
+
+
+                    </v-toolbar>
+
+
+                    <!-- <div v-if="selectedPartCompositionMidiData.length > 0">
+                        <v-chip class="ma-2" v-for="(item, index) in selectedPartCompositionMidiData" :key="index">
+                            {{item.swar}}                            
+                        </v-chip>
+                    </div> -->
+
+
+
+
+
+
+                </div>
+
+
+
+            </v-card>
+
+            <v-card class="pa-2 mt-2" XXmax-width="400" tile>
+                <div class="caption">Id: {{compositionId}}</div>
+                <div class="caption">Created on: {{createdDate.toLocaleString()}}</div>
+                <div class="caption">Last modified on: {{lastModifiedDate.toLocaleString()}}</div>
+            </v-card>
+
+
+
+
+            <v-dialog v-model="showCompositionListDialog" scrollable max-width="700px">
+                <v-card>
+                    <v-card-title>Compositions
+                        <v-spacer></v-spacer>
+                        <v-btn small class="mr-5 mb-1" @click="downloadAllCompositions">Download All
+                            <v-icon right dark>
+                                mdi-briefcase-download
+                            </v-icon>
+                        </v-btn>
+
+
+                        <v-btn icon @click="showCompositionListDialog = false">
+                            <v-icon>mdi-close</v-icon>
+                        </v-btn>
+                    </v-card-title>
+                    <v-divider></v-divider>
+                    <v-card-text style="height: 500px;">
+                        <v-data-table disable-pagination fixed-header hide-default-footer
+                            :headers="compositionListHeaders" :items="compositionList" sort-by="lastModifiedDate"
+                            class="elevation-1">
+
+                            <template v-slot:item.actions="{ item }">
+                                <v-icon small class="mr-2" @click="openComposition(item)">
+                                    mdi-folder-open
+                                </v-icon>
+
+                                <v-icon small @click="showDeleteConfirmDialogBox(item)">
+                                    mdi-delete
+                                </v-icon>
+                            </template>
+
+                            <template v-slot:item.date="{ item }">
+                                {{ item.lastModifiedDate.toLocaleString() }}
+                            </template>
+
+                            <template v-slot:no-data>
+                                <h3>No files found. Create something new!</h3>
+                            </template>
+                        </v-data-table>
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="showDeleteConfirmDialog" max-width="500px">
+                <v-card>
+                    <v-card-title class="text-h5">Are you sure you want to delete this?</v-card-title>
+                    <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn color="blue darken-1" text @click="showDeleteConfirmDialog = false">Cancel</v-btn>
+                        <v-btn color="blue darken-1" text @click="deleteCompositionConfirmed">OK</v-btn>
+                        <v-spacer></v-spacer>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <v-snackbar v-model="showMessageSnackbar" timeout="3000">
+                {{ messageTxt }}
+                <template v-slot:action="{ attrs }">
+                    <v-btn color="pink" text v-bind="attrs" @click="showMessageSnackbar = false">
+                        Close
+                    </v-btn>
+                </template>
+            </v-snackbar>
+
+            <!-- <v-card class="pa-5 mt-2" XXmax-width="400" tile>
+                <v-list-item two-line v-for="(part, index) in textParts" :key="index">
+                    <v-list-item-content>
+                        <v-list-item-title>Decoration ID: {{part.decorationId}}</v-list-item-title>
+                        <v-list-item-subtitle>{{part.selectedText}}</v-list-item-subtitle>
+                        <v-card>
+                            <v-btn x-small @click="">Record audio/keys</v-btn>
+
+                        </v-card>
+                    </v-list-item-content>
+                </v-list-item>
+            </v-card> -->
+            <!-- {{textParts}} -->
+
+        </div>
+    </template>
+
+
+    <template id="bar-template">
+        <div>
+            <h2>This is bar</h2>
+        </div>
+    </template>
+
+    <div id="app">
+        <v-app>
+            <v-app-bar app color="deep-purple accent-4" dark>
+                <!-- <v-app-bar-nav-icon></v-app-bar-nav-icon> -->
+                <v-toolbar-title style="cursor: pointer" @click="$router.push('/')">
+                    Quick Compose
+                </v-toolbar-title>
+                <v-spacer></v-spacer>
+                <v-spacer></v-spacer>
+                <v-btn to="/bar" icon>
+                    <v-icon>mdi-logout</v-icon>
+                </v-btn>
+            </v-app-bar>
+
+            <v-main>
+                <v-container fluid>
+                    <router-view></router-view>
+                </v-container>
+            </v-main>
+
+            <v-footer app>
+                Kaushik Ashodiya
+            </v-footer>
+
+            <v-footer app>
+                <span>Kaushik Ashodiya </span>
+                <v-spacer></v-spacer>
+                <v-divider vertical></v-divider>
+                <span class="mx-3"> MIDI: {{midiDeviceName}}</span>
+            </v-footer>
+
+        </v-app>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nexusui@latest/dist/NexusUI.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vuetify/2.6.2/vuetify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-router/3.5.3/vue-router.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webmidi@next/dist/iife/webmidi.iife.js"></script>
+
+    <script src="main.js"></script>
+
+    <script type="module">
+        import { openDB, deleteDB, wrap, unwrap } from 'https://cdn.jsdelivr.net/npm/idb@7/+esm';
+        window.openDB = openDB;
+
+        // console.log({ openDB, deleteDB, wrap, unwrap });
+        console.log('IDB library loaded... staring init() (this is from index.html)');
+
+        (async () => {
+            init();
+        })();
+    </script>
+
+    <!-- <script type="module">
+
+        // Enable WEBMIDI.js and trigger the onEnabled() function when ready
+        WebMidi
+            .enable()
+            .then(onEnabled)
+            .catch(err => alert(err));
+
+        // Function triggered when WEBMIDI.js is ready
+        function onEnabled() {
+
+            // Display available MIDI input devices
+            if (WebMidi.inputs.length < 1) {
+                document.body.innerHTML += "No device detected.";
+            } else {
+                WebMidi.inputs.forEach((device, index) => {
+                    console.log(`${index}: ${device.name}`);
+                });
+
+                const mySynth = WebMidi.inputs[0];
+                // const mySynth = WebMidi.getInputByName("TYPE NAME HERE!")
+
+                mySynth.channels[1].addListener("noteon", e => {
+                    console.log(e);
+                });
+            }
+
+        }
+
+    </script> -->
+
+
+</body>
+
+</html>
+
+<!-- 
+Piano
+https://github.com/diversen/js-svg-piano
+
+-->
