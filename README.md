@@ -1,11 +1,8 @@
 ## What is this?
-- App to record audios and keys and annotate that to the Lyrics
-- Also annotate various ways to sing same phrase etc.
-
-TODO Notes:
-Clear letter on keyboard after save
-Give timestamp to the part compositions
-Move composition to other TextPart 
-    Use drag drop? https://codesandbox.io/s/fast-wave-3mz7d?fontsize=14&hidenavigation=1&module=/src/components/ItemArticle.vue&theme=dark&file=/src/components/ItemArticle.vue:80-88
+- App to record Indian Clasical compositions
+- It records audio and keyboard keys
+- It generates virtual keyboard animation that you can send it to someone or keep for your future reference
+- This app does not need any software to be installed
+- You will need a electronic keyboad and MIDI cable
 
     
