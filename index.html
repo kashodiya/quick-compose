@@ -30,10 +30,10 @@
         }
 
 
-        /* .v-text-field input {
-            font-size: 1.2em;
-            color: red;
-        } */
+        .v-input textarea {
+            font-size: 0.875rem;
+        }
+
 
         .selected-text-part {
             background-color: yellow;
@@ -213,12 +213,11 @@
                             class="elevation-1 mt-3 parts-compositions-table">
 
                             <template v-slot:item.local-notes="{ item }">
-                                <div :id="item.id" draggable @dragstart="onPartCompositionDragStart"
+                                <div :id="item.id" :ref="item.id" draggable @dragstart="onPartCompositionDragStart"
                                     class="note-in-part-comp-table">
                                     {{item.notes}}
                                 </div>
                             </template>
-
 
                             <template v-slot:item.hasaudio="{ item }">
                                 {{item.audioBlob ? 'Yes' : 'No'}}
@@ -248,12 +247,13 @@
                         <div class="mt-3" v-show="selectedPartComposition" ref="partCompositionNotes">
                             <v-textarea v-if="selectedPartComposition" height="80" outlined dense hide-details
                                 ref="partCompositionNotes" v-model="selectedPartComposition.notes"
-                                label="Notes"></v-textarea>
+                                :label="'Notes for Composition ID - ' + selectedPartComposition.id"></v-textarea>
                             <v-toolbar flat dense class="mt-5">
 
                                 <v-btn medium @click="startRecording" color="success"
                                     :disabled="shouldDisableButton('Record')">
-                                    {{ selectedPartComposition != null && selectedPartComposition.audioBlob == null ? 'Record' :'RE-record'}}
+                                    {{ selectedPartComposition != null && selectedPartComposition.audioBlob == null ?
+                                    'Record' :'RE-record'}}
                                     <v-icon right dark>
                                         mdi-record
                                     </v-icon>
@@ -278,16 +278,34 @@
                                 <canvas v-show="recordingInProgress" id="piano-canvas" ref="pianoCanvas"
                                     class="ml-5"></canvas>
 
+                                <v-spacer></v-spacer>
+
+
+                                <v-btn class="ml-3" x-small @click="showSwarsEng = !showSwarsEng" 
+                                    :disabled="shouldDisableButton('showSwarsEng')">
+                                    Swars
+                                    <v-icon right dark>
+                                        {{showSwarsEng ? 'mdi-eye-off' : 'mdi-eye'}}
+                                    </v-icon>
+                                </v-btn>
+
+
                             </v-toolbar>
+
+                            <div class="ml-5 mt-2"
+                                v-if="selectedPartComposition != null && selectedPartComposition.swarsEng != null && showSwarsEng">
+                                {{selectedPartComposition.swarsEng}}
+                            </div>
+
 
                             <v-toolbar flat dense class="mt-5">
                                 <video v-show="selectedPartComposition && selectedPartComposition.audioBlob"
                                     XXstyle="height:100px" controls ref="captureVideo"></video>
                                 <v-btn class="ml-5" small
                                     v-show="selectedPartComposition && selectedPartComposition.videoBlob"
-                                    XXhref="selectedPartComposition.videoURL"
-                                    XXdisabled="selectedPartComposition.videoBlob == null"
-                                    XXdownload="selectedPartComposition.id">
+                                    :href="getDownloadVideoBtnHref()"
+                                    :disabled="selectedPartComposition == null || selectedPartComposition.videoBlob == null"
+                                    :download="selectedPartComposition == null ? '' : selectedPartComposition.id">
                                     Download Video
                                     <v-icon right>mdi-download</v-icon>
                                 </v-btn>
@@ -295,10 +313,12 @@
                             <v-toolbar flat dense class="mt-5">
                                 <audio v-show="selectedPartComposition && selectedPartComposition.videoBlob"
                                     ref="audioPlayer" controls></audio>
-                                <v-btn class="ml-5" small
+                                <v-btn class="ml-5" small ref="downloadAudioBtn"
                                     v-show="selectedPartComposition && selectedPartComposition.audioBlob"
-                                    XXhref="selectedPartComposition.audioURL"
+                                    :href="getDownloadAudioBtnHref()"
+                                    :disabled="selectedPartComposition == null || selectedPartComposition.audioBlob == null"
                                     XXdisabled="selectedPartComposition.audioBlob == null"
+                                    :download="selectedPartComposition == null ? '' : selectedPartComposition.id  + '.mp3'"
                                     XXdownload="selectedPartComposition.id + '.mp3'">
                                     Download Audio
                                     <v-icon right>mdi-download</v-icon>

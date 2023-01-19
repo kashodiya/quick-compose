@@ -56,6 +56,7 @@ const Home = Vue.component('Home', {
             recordingInProgress: false,
             discardCurrentRecording: false,
             audioMediaCaptured: false,
+            showSwarsEng: false,
             text: ''
         }
     },
@@ -229,9 +230,14 @@ const Home = Vue.component('Home', {
             this.selectedTextPart.compositions.push(composition)
             this.setSelectedPartComposition(composition);
 
-            this.$vuetify.goTo(this.$refs.partCompositionNotes);
-                    
-
+            // this.$vuetify.goTo(this.$refs.partCompositionNotes);
+            // TODO: Scroll to the row in the table
+            // xxx
+            Vue.nextTick(() => {
+                let container = this.$refs["part-compositions-table"].$el.querySelector('div.v-data-table__wrapper');
+                let row = this.$refs[composition.id];
+                this.$vuetify.goTo(row, { container });
+            });
 
         },
         scrollToTextPartTableRow(id) {
@@ -272,6 +278,10 @@ const Home = Vue.component('Home', {
                     this.selectedPartComposition.audioURL = audioPlayer.src;
                     // console.log('Converting audio blob to url...DONE!');
                     // audioEle.play();
+                    // let downloadAudioBtn = this.$refs.downloadAudioBtn;
+                    // downloadAudioBtn.href = this.selectedPartComposition.audioURL;
+                    // downloadAudioBtn.disabled = false;
+                    // downloadAudioBtn.download = this.selectedPartComposition.id + '.mp3';
                 }
                 let videoEle = this.$refs.captureVideo;
                 if (this.selectedPartComposition.videoBlob) {
@@ -284,8 +294,21 @@ const Home = Vue.component('Home', {
                     this.selectedPartComposition.videoURL = null;
                 }
                 videoEle.src = this.selectedPartComposition.videoURL;
-
             });
+        },
+        getDownloadVideoBtnHref(){
+            let href = ''
+            if(this.selectedPartComposition != null && this.selectedPartComposition.videoURL != null){
+                href = this.selectedPartComposition.videoURL;
+            }
+            return href;
+        },
+        getDownloadAudioBtnHref(){
+            let href = '';
+            if(this.selectedPartComposition != null && this.selectedPartComposition.audioURL != null){
+                href = this.selectedPartComposition.audioURL;
+            }
+            return href;
         },
         partCompositionTableRowClicked(composition) {
             // console.log({ composition });
@@ -438,8 +461,15 @@ const Home = Vue.component('Home', {
                 tp.compositions.forEach(cp => {
                     if (cp.audioURL) delete cp.audioURL;
                     if (cp.videoURL) delete cp.videoURL;
+
+                    //TODO: Remove following block
                     if (cp.midiData) {
-                        cp.swarsEng = cp.midiData.filter(d => d.type == 'noteon').map(d => d.swarEng).join(' ');
+                        if(cp.swarsEng){
+                            //We do not need to worry about the midiData, as it is generated when recording is saved
+                            console.log('We do not need to worry about the midiData, as it is generated when recording is saved.');
+                        }else{
+                            cp.swarsEng = cp.midiData.filter(d => d.type == 'noteon').map(d => d.swarEng).join(' ');
+                        }
                     }
                 });
             });
@@ -540,6 +570,8 @@ const Home = Vue.component('Home', {
                 this.selectedPartComposition.midiData = midiData;
                 audioEle.src = audioBlobURL;
                 // audioEle.play();
+                this.selectedPartComposition.swarsEng = midiData.filter(d => d.type == 'noteon').map(d => d.swarEng).join(' ');
+
                 console.table(midiData);
             } else {  //data.type == 'video'
                 console.log({ event: 'onAudioMidiStop', data });
@@ -555,6 +587,9 @@ const Home = Vue.component('Home', {
             }
             if(btnName == 'Discard'){
                 return !this.recordingInProgress; 
+            }
+            if(btnName == 'showSwarsEng'){
+                return this.selectedPartComposition == null || this.selectedPartComposition.swarsEng == null; 
             }
             return false;
         },
@@ -692,7 +727,7 @@ const Home = Vue.component('Home', {
             // this.initData();
 
             let compositions = await dbHelper.getAllCompositions();
-            let composition = compositions.find((c) => c.title == 'Untitled');
+            let composition = compositions.find((c) => c.title == 'Untitled-n');
             this.openComposition(composition);
         })
 
@@ -1156,7 +1191,7 @@ function createEditor(container, text, onDone) {
             value: text,
             language: 'text',
             theme: 'vs-dark',
-            fontSize: "18px",
+            fontSize: "14px",
             selectionHighlight: false,
             minimap: {
                 enabled: false
@@ -1167,6 +1202,12 @@ function createEditor(container, text, onDone) {
         });
 
         // console.log({ editor });
+
+        window.addEventListener("resize", () => {
+            editor.layout();
+        });
+
+
         onDone(editor);
     });
 
