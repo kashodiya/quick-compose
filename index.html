@@ -105,14 +105,12 @@
                             mdi-briefcase-download
                         </v-icon>
                     </v-btn>
+                    <v-progress-linear class="mt-2" v-if="showDownloadingProgress" indeterminate
+                        color="yellow darken-2"></v-progress-linear>
 
                     <!-- <v-btn small class="ml-5 mt-5" @click="test">test</v-btn> -->
-
-
                 </v-col>
             </v-row>
-
-
 
             <v-row no-gutters style="flex-wrap: nowrap">
                 <v-col cols="6" XXstyle="min-width: 100px; max-width: 100%" class="flex-grow-0 flex-shrink-0">
@@ -281,7 +279,7 @@
                                 <v-spacer></v-spacer>
 
 
-                                <v-btn class="ml-3" x-small @click="showSwarsEng = !showSwarsEng" 
+                                <v-btn class="ml-3" x-small @click="showSwarsEng = !showSwarsEng"
                                     :disabled="shouldDisableButton('showSwarsEng')">
                                     Swars
                                     <v-icon right dark>
@@ -360,10 +358,16 @@
                             <v-icon>mdi-close</v-icon>
                         </v-btn>
                     </v-card-title>
+
+                    <v-progress-linear XXclass="mt-2" v-if="showAllDownloadingProgress" indeterminate
+                        color="yellow darken-2"></v-progress-linear>
+
                     <v-divider></v-divider>
                     <v-card-text style="height: 500px;">
-                        <v-data-table disable-pagination fixed-header hide-default-footer
-                            :headers="compositionListHeaders" :items="compositionList" sort-by="lastModifiedDate"
+                        <!-- {{JSON.stringify(listOfSelectedCompositions, null, 2)}} -->
+                        <v-data-table disable-pagination fixed-header hide-default-footer show-select
+                            v-model="listOfSelectedCompositions" :headers="compositionListHeaders"
+                            :items="compositionList" sort-by="lastModifiedDate" item-key="compositionId"
                             class="elevation-1">
 
                             <template v-slot:item.local-title="{ item }">
@@ -449,8 +453,8 @@
                 </v-toolbar-title>
                 <v-spacer></v-spacer>
                 <v-spacer></v-spacer>
-                <v-btn to="/bar" icon>
-                    <v-icon>mdi-logout</v-icon>
+                <v-btn @click="showHelp" icon>
+                    <v-icon>mdi-help-circle</v-icon>
                 </v-btn>
             </v-app-bar>
 
@@ -471,9 +475,24 @@
                 <span class="mx-3"> MIDI: {{midiDeviceName}}</span>
             </v-footer>
 
+            <v-dialog v-model="showHelpDialog" scrollable max-width="700px">
+                <v-card>
+                    <v-card-title>Help
+                        <v-spacer></v-spacer>
+                        <v-btn icon @click="showHelpDialog = false">
+                            <v-icon>mdi-close</v-icon>
+                        </v-btn>
+                    </v-card-title>
+                    <v-card-text style="height: 500px;" v-html="helpHTML">
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
+
+
         </v-app>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nexusui@latest/dist/NexusUI.js"></script>

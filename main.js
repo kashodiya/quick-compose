@@ -38,7 +38,7 @@ const Home = Vue.component('Home', {
                 { text: 'Text', value: 'local-selectedtext' },
                 // { text: 'Id', value: 'decorationId' },
                 // { text: 'Id', value: 'id' },
-                // { text: 'Range', value: 'range' },
+                { text: 'Range', value: 'range', width: '150px' },
                 { text: 'Actions', value: 'actions', sortable: false, width: '150px' },
             ],
             partCompositionsTableHeaders: [
@@ -57,6 +57,9 @@ const Home = Vue.component('Home', {
             discardCurrentRecording: false,
             audioMediaCaptured: false,
             showSwarsEng: false,
+            showDownloadingProgress: false,
+            showAllDownloadingProgress: false,
+            listOfSelectedCompositions: [],
             text: ''
         }
     },
@@ -122,12 +125,16 @@ const Home = Vue.component('Home', {
         async downloadAllCompositions() {
             //            let zipBlob = await getZippedCompositionBlob(composition);
             // this.compositionList
+            this.showAllDownloadingProgress = true;
             let zip = new JSZip();
             console.log('Building zip file...');
+            this.showMessage('Building zip file...');
 
             for (const composition of this.compositionList) {
                 let compZipBlob = await this.getZippedCompositionBlob(composition);
                 console.log(`Adding ${composition.title} to the zip blob`);
+                this.showMessage(`Zipping ${composition.title}...`);
+
                 zip.file(composition.compositionId + '-' + composition.title + '.zip', compZipBlob, { base64: true });
             }
 
@@ -139,6 +146,7 @@ const Home = Vue.component('Home', {
             // });
             
             console.log('All added...Creating final zip...');
+            this.showMessage('All added...Creating final zip...');
 
             var d = new Date();
             let fileName = ['all-compositions_',
@@ -151,10 +159,12 @@ const Home = Vue.component('Home', {
 
             let zipBlob = await zip.generateAsync({ type: "blob" });
             saveAs(zipBlob, fileName);
+            this.showMessage('Downloading done!');
+            this.showAllDownloadingProgress = false;
         },
         async getZippedCompositionBlob(composition) {
             let zip = new JSZip();
-            zip.file(this.compositionId + '-' + this.title + 'data.json', JSON.stringify(composition, null, 2));
+            zip.file(this.compositionId + '-' + this.title + '-data.json', JSON.stringify(composition, null, 2));
 
             composition.textParts.forEach(tp => {
                 tp.compositions.forEach(cp => {
@@ -171,6 +181,7 @@ const Home = Vue.component('Home', {
             return zipBlob;
         },
         async downloadComposition() {
+            this.showDownloadingProgress = true;
             let composition = this.gatherCompositionForSaving();
             // let zip = new JSZip();
             // zip.file(this.compositionId + '-' + this.title + 'data.json', JSON.stringify(composition, null, 2));
@@ -191,6 +202,7 @@ const Home = Vue.component('Home', {
             // let zipBlob = await zip.generateAsync({ type: "blob" });
             let fileName = name + '.zip';
             saveAs(zipBlob, this.compositionId + '-' + this.title + '.zip');
+            this.showDownloadingProgress = false;
         },
         deleteTextPart(part) {
             let index = this.textParts.findIndex(tp => tp.id == part.id);
@@ -330,12 +342,21 @@ const Home = Vue.component('Home', {
             }else if(this.selectedTextPart.compositions.length > 0){    //If text part has any composition
                 partCompositionIndex = 0;
             }
-            if(partCompositionIndex >= 0 && this.selectedPartComposition && this.selectedPartComposition.id != this.selectedTextPart.compositions[ partCompositionIndex].id){
-                //If composition is not already selected
-                this.setSelectedPartComposition(this.selectedTextPart.compositions[ partCompositionIndex]);
+
+            if(partCompositionIndex >= 0){
+                this.setSelectedPartComposition(this.selectedTextPart.compositions[partCompositionIndex]);
             }else{
-                console.log('No action taken in setSelectedTextPart for the Compositions table');
+                this.selectedPartComposition = null;
             }
+
+
+            // if(partCompositionIndex >= 0 && this.selectedPartComposition && this.selectedPartComposition.id != this.selectedTextPart.compositions[ partCompositionIndex].id){
+            //     //If composition is not already selected
+            //     this.setSelectedPartComposition(this.selectedTextPart.compositions[ partCompositionIndex]);
+            // }else{
+            //     console.log('No action taken in setSelectedTextPart for the Compositions table - ' + partCompositionIndex);
+            //     this.selectedPartComposition = null;
+            // }
         },
         attachPartToSelectedText(part){
             let selection = this.editor.getSelection();
@@ -441,9 +462,13 @@ const Home = Vue.component('Home', {
         updateTextPartPositions() {
             //Store start and end locations for each part as it is appearing now in the editor
             this.textParts.forEach(part => {
-                let deco = this.editor.getModel().getDecorationRange(part.decorationId);
-                console.log(deco);
-                part.decorationRange = deco;
+                let range = this.editor.getModel().getDecorationRange(part.decorationId);
+                console.log(range);
+                part.decorationRange = range;
+                // Update selected text
+                let selectedText = this.editor.getModel().getValueInRange(range);
+                // console.log(part.selectedText + ' = ' + selectedText);
+                part.selectedText = selectedText;
             });
         },
         gatherCompositionForSaving() {
@@ -627,6 +652,8 @@ const Home = Vue.component('Home', {
             this.textParts.push(newTextPart);
             this.selectedTextPart = newTextPart;
 
+            this.selectedPartComposition = null;
+
             console.log({ selectedText, decorationId, selectedTextPart: this.selectedTextPart });
 
             //textParts
@@ -727,8 +754,13 @@ const Home = Vue.component('Home', {
             // this.initData();
 
             let compositions = await dbHelper.getAllCompositions();
-            let composition = compositions.find((c) => c.title == 'Untitled-n');
-            this.openComposition(composition);
+            let composition = compositions.find((c) => c.title == 'Rupa Pahata Jan 21');
+            if(composition){
+                this.openComposition(composition);
+            }else{
+                this.editor.setValue(sampleLyrics);
+            }
+            // let composition = compositions.find((c) => c.compositionId == '23fe72603feb6');
         })
 
 
@@ -1161,6 +1193,8 @@ function initVue() {
                 state: store.state,
                 midiDeviceName: 'Please connect keyboard and reload the page.',
                 midiDeviceId: '',
+                helpHTML: '',
+                showHelpDialog: false
             }
         },
         el: '#app',
@@ -1172,6 +1206,15 @@ function initVue() {
 
                 this.midiDeviceId = status.deviceId;
                 this.midiDeviceName = status.deviceName;
+            },
+            async showHelp(){
+                console.log('showHelp...');
+                if(this.helpHTML == ''){
+                    let helpReadmeTxt = await fetch('README.md').then(res => res.text());
+                    // console.log(welcomeMDtxt);
+                    this.helpHTML = marked.parse(helpReadmeTxt);
+                }
+                this.showHelpDialog = true;
             }
         },
         created() {
@@ -1249,6 +1292,29 @@ async function init() {     //THIS METHOD IS CALLED FROM index.html script tag
     initVue();
 }
 
+
+let sampleLyrics = `=== THIS IS JUST A SAMPLE, CLICK NEW BUTTON TO START BLANK===
+चन्दन सा बदन चंचल चितवन
+धीरे से तेरा ये मुस्काना
+मुझे दोष न देना जग वालों - (२)
+हो जाऊँ अगर मैं दीवाना
+चन्दन सा ...
+
+ये काम कमान भँवे तेरी
+पलकों के किनारे कजरारे
+माथे पर सिंदूरी सूरज
+होंठों पे दहकते अंगारे
+साया भी जो तेरा पड़ जाए - (२)
+आबाद हो दिल का वीराना
+चन्दन सा ...
+
+तन भी सुंदर मन भी सुंदर
+तू सुंदरता की मूरत है
+किसी और को शायद कम होगी
+मुझे तेरी बहुत ज़रूरत है
+पहले भी बहुत मैं तरसा हूँ - (२)
+तू और न मुझको तरसाना
+चन्दन सा ...`
 
 //================================================================================================
 //================================================================================================
