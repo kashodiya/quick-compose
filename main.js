@@ -766,7 +766,6 @@ const Home = Vue.component('Home', {
 
         // this.$nextTick(() => this.$refs['title'].focus());
 
-
     },
     created() {
         console.log('Home created');
