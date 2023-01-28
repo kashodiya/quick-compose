@@ -216,6 +216,13 @@ const Home = Vue.component('Home', {
 
         },
         deleteTextPartComposition(composition) {
+            if(composition){
+                if(this.selectedPartComposition != null){
+                    composition = this.selectedPartComposition;
+                }else{
+                    console.log('Ignoring call to deleteTextPartComposition as selectedPartComposition is null.');                    
+                }
+            }
             let index = this.selectedTextPart.compositions.findIndex(c => c.id == composition.id);
             // console.log({index, composition, tbd: this.selectedTextPart.compositions[index]});
             this.selectedTextPart.compositions.splice(index, 1);
@@ -615,6 +622,9 @@ const Home = Vue.component('Home', {
             }
             if(btnName == 'showSwarsEng'){
                 return this.selectedPartComposition == null || this.selectedPartComposition.swarsEng == null; 
+            }
+            if(btnName == 'Delete'){
+                return this.recordingInProgress; 
             }
             return false;
         },

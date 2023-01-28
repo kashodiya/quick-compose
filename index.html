@@ -273,6 +273,17 @@
                                     </v-icon>
                                 </v-btn>
 
+                                <v-btn class="ml-3" medium @click="deleteTextPartComposition" color="error" 
+                                    :disabled="shouldDisableButton('Delete')">
+                                    Delete
+                                    <v-icon right dark>
+                                        mdi-delete-forever
+                                    </v-icon>
+                                </v-btn>
+
+
+
+
                                 <canvas v-show="recordingInProgress" id="piano-canvas" ref="pianoCanvas"
                                     class="ml-5"></canvas>
 
@@ -286,7 +297,6 @@
                                         {{showSwarsEng ? 'mdi-eye-off' : 'mdi-eye'}}
                                     </v-icon>
                                 </v-btn>
-
 
                             </v-toolbar>
 
