@@ -60,7 +60,24 @@ const Home = Vue.component('Home', {
             showDownloadingProgress: false,
             showAllDownloadingProgress: false,
             listOfSelectedCompositions: [],
-            text: ''
+            text: '',
+            taals: [
+                {name: '-NONE-', matras: 0, vibhags: 0},
+                {name: 'Teental', matras: 12, vibhags: 2},
+                {name: 'Ektal', matras: 12, vibhags: 2},
+                {name: 'Rupaktal', matras: 12, vibhags: 2},
+                {name: 'Jhaptal', matras: 12, vibhags: 2},
+                {name: 'Addhatal', matras: 12, vibhags: 2},
+                {name: 'Keherwa', matras: 12, vibhags: 2},
+                {name: 'Dadra', matras: 12, vibhags: 2},
+                {name: 'Deepchandi', matras: 12, vibhags: 2},
+                {name: 'Dhoomra', matras: 12, vibhags: 2},
+                {name: 'Chautal', matras: 12, vibhags: 2},
+                {name: 'Dhammar', matras: 12, vibhags: 2},
+                {name: 'Ada Chautal', matras: 12, vibhags: 2},
+                {name: 'Mattatal', matras: 12, vibhags: 2},
+                {name: 'Tilwada', matras: 12, vibhags: 2}
+            ]
         }
     },
     methods: {
@@ -244,9 +261,11 @@ const Home = Vue.component('Home', {
                 audioBlob: null,
                 notes: '--NO NOTES--',
                 midiData: null,
-                id: this.generateCompositionId()
+                id: this.generateCompositionId(),
+                taal: this.taals[0]
             };
-            this.selectedTextPart.compositions.push(composition)
+
+            this.selectedTextPart.compositions.push(composition);
             this.setSelectedPartComposition(composition);
 
             // this.$vuetify.goTo(this.$refs.partCompositionNotes);
@@ -286,7 +305,15 @@ const Home = Vue.component('Home', {
         },
         setSelectedPartComposition(composition) {
             this.selectedPartComposition = composition;
+
+
             Vue.nextTick(() => {
+
+                if(this.selectedPartComposition.taal == null){
+                    this.selectedPartComposition.taal = this.taals[0];
+                    // console.log({msg: 'Setting: this.selectedPartComposition.taal == this.taals[0]', selectedPartComposition: this.selectedPartComposition, selectedPartComposition_taal: this.selectedPartComposition.taal, taal: this.taals[0]});
+                }
+    
                 let pianoCanvas = this.$refs.pianoCanvas;
                 this.audoiMidi.initPianoRoll(pianoCanvas);
                 if (this.selectedPartComposition.audioBlob) {
