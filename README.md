@@ -4,6 +4,7 @@
 - It generates virtual keyboard animation video clips that you can send it to someone or keep for your future reference
 - This app does not need any software to be installed
 - You will need a electronic keyboad and MIDI cable
+<br/><br/>
 
 ## How to record a new composition
 - Connect your keyboard using MIDI cable (Ensrue that name of your keyboard appears the bottom right)
@@ -21,12 +22,14 @@
 - Repeat above steps to record for compositions for same text or for other texts
 - Click "SAVE" to save everything
 - To download the composition 
+<br/><br/>
 
-## How to open previously recorded compositions
+## How to open previously recorded compositions?
 - Click "OPEN" button
-- Select the previously recorded composition    
+- Select the previously recorded composition
+<br/><br/>
 
-## How to download all the compositions
+## How to download all the compositions?
 - Click "OPEN" button
 - Click "DOWNLOAD ALL" button
-
+<br/><br/>
