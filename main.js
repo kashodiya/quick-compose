@@ -1,4 +1,3 @@
-/// <reference path="node_modules/monaco-editor/monaco.d.ts" />
 console.log('Start of main.js');
 
 
